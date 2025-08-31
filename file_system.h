@@ -1,11 +1,23 @@
+/*
+This file contains the file system class decleration
+Any constants used in the program
+*/
+
 #ifndef FILE_SYSTEM_H
 #define FILE_SYSTEM_H
 
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #define BLOCK_SIZE 4096
 #define MAX_FILE_NAME 256
+
+using BlockIndex = int;
+enum : int
+{
+    INVALID_BLOCK = -1
+};
 
 struct Block
 {
@@ -16,9 +28,9 @@ struct Block
 struct File
 {
     int id;
-    char name[MAX_FILE_NAME + 1];
+    std::string name;
     int size;
-    std::vector<char *> blocks_data_pointers; // list for the beginning of the blocks the file is using
+    std::vector<BlockIndex> block_indices;
 };
 
 class FileSystem
@@ -27,20 +39,27 @@ class FileSystem
 private:
     int id;
     std::vector<Block> blocks;
-    std::vector<int> free_blocks;
+    std::vector<BlockIndex> free_blocks;
     std::vector<File> files;
     int top_free;
+
+    bool free_block(BlockIndex block_number);
 
 public:
     FileSystem(int number_of_blocks);
     ~FileSystem();
-    std::vector<Block> &get_blocks();
+
     std::vector<File> &get_files();
-    int allocate_block();
-    bool free_block(int block_number);
+    std::vector<Block> &get_blocks();
+
+    BlockIndex allocate_block();
+
     File *create_file(const char *name);
     bool add_data_to_file(File *f, const char *data);
-    void print_meta_data(File &file) const;
+    bool delete_file(int file_id);
+
+    void print_meta_data(const File &file) const;
+    void print_file(const File &file) const;
 };
 
 #endif

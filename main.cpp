@@ -1,54 +1,30 @@
-#include <stdio.h>
+#include <cstdio>
 #include <string.h>
 #include "file_system.h"
+#include "tests.h"
 
-FILE *open_file(const char *file_name, const char *file_ending, const char *mode);
+std::FILE *open_file(const char *file_name, const char *file_ending, const char *mode);
 
 int main()
 {
-    FILE *story;
-    story = open_file("peter_the_rabbit", ".txt", "r");
+    FileSystem fs = FileSystem(1000); // the im-memory file system
+    std::FILE *story = open_file("peter_the_rabbit", ".txt", "r");
     if (!story)
         return 1;
 
-    FileSystem fs = FileSystem(1000);
-    char filename[MAX_FILE_NAME + 1];
-    char buffer[BLOCK_SIZE + 1];
-    int n, i;
+    break_file(fs, story, "peter_the_rabbit");
 
-    i = 0;
-
-    while ((n = fread(buffer, sizeof(char), BLOCK_SIZE, story)) > 0)
-    {
-        buffer[n] = '\0';
-
-        sprintf(filename, "Peter_The_Rabbit_Part%d.txt", i + 1); // creating the file name
-        File *f = fs.create_file(filename);
-
-        fs.add_data_to_file(f, buffer);
-        i++;
-    }
-
-    if (ferror(story))
-        printf("An error accured trying reading the file \"%s\"\n", filename);
-
-    char data[BLOCK_SIZE + 1];
-    for (File &file : fs.get_files())
+    for (const File &file : fs.get_files())
     {
         fs.print_meta_data(file);
-        for (char *c : file.blocks_data_pointers)
-        {
-            strcpy(data, c);
-            data[strlen(c)] = '\0';
-            printf("%s", data);
-        }
-        printf("\n--- End of File ---\n");
+        fs.print_file(file);
     }
 
+    std::fclose(story);
     return 0;
 }
 
-FILE *open_file(const char *file_name, const char *file_ending, const char *mode)
+std::FILE *open_file(const char *file_name, const char *file_ending, const char *mode)
 {
     int name_length = strlen(file_name) + strlen(file_ending);
     char full_file_name[MAX_FILE_NAME + 1];
@@ -57,10 +33,10 @@ FILE *open_file(const char *file_name, const char *file_ending, const char *mode
     strcat(full_file_name, file_ending);
     full_file_name[name_length] = '\0';
 
-    FILE *f = fopen(full_file_name, mode);
+    std::FILE *f = std::fopen(full_file_name, mode);
     if (f == NULL)
     {
-        printf("Failed to open \"%s%s\"", file_name, file_ending);
+        printf("Failed to open \"%s%s\"\n", file_name, file_ending);
     }
 
     return f;
