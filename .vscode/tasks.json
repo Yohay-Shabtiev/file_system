@@ -5,6 +5,7 @@
             "label": "C/C++: gcc.exe build active file",
             "command": "C:\\MinGw\\bin\\gcc.exe",
             "args": [
+                "-std=c++17",
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
