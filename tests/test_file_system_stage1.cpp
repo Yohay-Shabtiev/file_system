@@ -20,7 +20,7 @@ TEST(InMemoryBlockDevice, read_write_block)
     InMemoryBlockDevice device(size_byte);
 
     int total_blocks = device.get_total_blocks_number();
-    assert(device.get_total_blocks_number() < 2);
+    assert(device.get_total_blocks_number() >= 2);
 
     std::uint8_t buffer1[BLOCK_SIZE];
     std::uint8_t buffer2[BLOCK_SIZE];
