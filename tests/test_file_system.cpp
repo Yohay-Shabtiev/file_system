@@ -14,8 +14,8 @@
 
 TEST(FileSystemTest, ctorDeviceIsNotFormatted)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     FileSystem fs(device);
     std::string root_path = "/";
     std::vector<DirEntry> entries;
@@ -27,8 +27,8 @@ TEST(FileSystemTest, ctorDeviceIsNotFormatted)
 
 TEST(FileSystemTest, ctorDeviceRemount)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     {
         FileSystem fs1(device);
         fs1.format();
@@ -45,8 +45,8 @@ TEST(FileSystemTest, ctorDeviceRemount)
 }
 TEST(FileSystemTest, corruptSuperblock)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     FileSystem fs(device);
     fs.format();
 
@@ -77,8 +77,8 @@ TEST(FileSystemTest, corruptSuperblock)
 
 TEST(FileSystemTest, formatInitializeBitmap)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     FileSystem fs(device);
     fs.format();
 
@@ -96,8 +96,8 @@ TEST(FileSystemTest, formatInitializeBitmap)
 
 TEST(FileSystemTest, formatInitializeInodeBlocks)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     FileSystem fs(device);
     fs.format();
 
@@ -115,8 +115,8 @@ TEST(FileSystemTest, formatInitializeInodeBlocks)
 
 TEST(FileSystemTest, formatRemount)
 {
-    int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(byte_size);
+    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+    InMemoryBlockDevice device(size_byte);
     {
         FileSystem fs(device);
         fs.format();
@@ -127,8 +127,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootNotFormatted)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     std::string s = "my_entry";
@@ -139,8 +139,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootNoName)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     fs.format();
@@ -153,8 +153,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootTooLongName)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     fs.format();
@@ -169,8 +169,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootNoSpaceOnDisk)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     fs.format();
@@ -190,8 +190,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootDuplicateName)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     fs.format();
@@ -206,8 +206,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, CreateEntryInRootDirRemount)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs1(device);
 
 //     fs1.format();
@@ -228,8 +228,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, createEntryInRootRemountInodeExistance)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 
 //     {
 //         FileSystem fs1(device);
@@ -249,8 +249,8 @@ TEST(FileSystemTest, formatRemount)
 // // this are new
 // TEST(FileSystemTest, create_entry_in_root_NotFormatted)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     fs.create_entry_in_root("f");
@@ -263,8 +263,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, get_root_entry_inode_NotFound)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 //     fs.format();
 
@@ -279,8 +279,8 @@ TEST(FileSystemTest, formatRemount)
 
 // TEST(FileSystemTest, create_entry_in_root_disk_is_full)
 // {
-//     int byte_size = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-//     InMemoryBlockDevice device(byte_size);
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
 //     FileSystem fs(device);
 
 //     {
