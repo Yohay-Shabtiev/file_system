@@ -15,7 +15,7 @@ public:
 
     virtual int get_total_blocks_number() const = 0;
 
-    virtual void read_block(int block_index, std::uint8_t *buffer) = 0;
+    virtual void read_block(int block_index, std::uint8_t *buffer) const = 0;
 
     virtual void write_block(int block_index, const std::uint8_t *buffer) = 0;
 };
