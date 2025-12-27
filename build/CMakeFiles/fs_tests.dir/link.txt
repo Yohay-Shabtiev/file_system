@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/fs_tests.dir/tests/test_in_memory_block_device.cpp.o CMakeFiles/fs_tests.dir/tests/test_file_system.cpp.o -o fs_tests  libfilesystem_core.a lib/libgtest_main.a lib/libgtest.a 

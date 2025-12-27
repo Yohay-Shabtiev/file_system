@@ -1,2 +1,0 @@
-/usr/bin/ar qc libfilesystem_core.a CMakeFiles/filesystem_core.dir/src/in_memory_block_device.cpp.o CMakeFiles/filesystem_core.dir/src/file_system.cpp.o
-/usr/bin/ranlib libfilesystem_core.a
