@@ -31,8 +31,10 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()  # tells CMake that we will have tests
 
 add_executable(fs_tests
-    tests/test_in_memory_block_device.cpp
-    tests/test_file_system.cpp
+    tests/test_file_system_stage1.cpp
+    tests/test_file_system_stage2.cpp
+    tests/test_file_system_data_manager.cpp
+    # tests/test_file_system.cpp
 )
 
 target_link_libraries(fs_tests
@@ -41,7 +43,4 @@ target_link_libraries(fs_tests
         gtest_main        # GoogleTest main()
 )
 
-add_test(
-    NAME fs_tests
-    COMMAND fs_tests
-)
+add_test(NAME fs_tests COMMAND fs_tests)

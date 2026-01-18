@@ -23,8 +23,7 @@ void InMemoryBlockDevice::read_block(int block_index, std::uint8_t *buffer) cons
     assert(block_index >= 0);
     assert(block_index < get_total_blocks_number());
 
-    int offset = block_index * BLOCK_SIZE;
-    std::memcpy(buffer, &memory[offset], BLOCK_SIZE);
+    std::memcpy(buffer, &memory[block_index], BLOCK_SIZE);
 }
 
 void InMemoryBlockDevice::write_block(int block_index, const std::uint8_t *buffer)
@@ -32,6 +31,5 @@ void InMemoryBlockDevice::write_block(int block_index, const std::uint8_t *buffe
     assert(block_index >= 0);
     assert(block_index < get_total_blocks_number());
 
-    int offset = block_index * BLOCK_SIZE;
-    std::memcpy(&memory[offset], buffer, BLOCK_SIZE);
+    std::memcpy(&memory[block_index], buffer, BLOCK_SIZE);
 }

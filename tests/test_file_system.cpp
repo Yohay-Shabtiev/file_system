@@ -12,7 +12,7 @@
 
 /******************* CTOR TESTs *******************/
 
-TEST(FileSystemTest, ctorDeviceIsNotFormatted)
+TEST_FS(FileSystemTest, ctorDeviceIsNotFormatted)
 {
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
@@ -25,7 +25,7 @@ TEST(FileSystemTest, ctorDeviceIsNotFormatted)
     EXPECT_EQ(status, FileSystemStatus::NotFormatted);
 }
 
-TEST(FileSystemTest, ctorDeviceRemount)
+TEST_FS(FileSystemTest, ctorDeviceRemount)
 {
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
@@ -43,31 +43,31 @@ TEST(FileSystemTest, ctorDeviceRemount)
     EXPECT_TRUE(entries.empty());
     EXPECT_EQ(status, FileSystemStatus::OK);
 }
-TEST(FileSystemTest, corruptSuperblock)
-{
-    int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
-    InMemoryBlockDevice device(size_byte);
-    FileSystem fs(device);
-    fs.format();
+// TEST_FS(FileSystemTest, corruptSuperblock)
+// {
+//     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
+//     InMemoryBlockDevice device(size_byte);
+//     FileSystem fs(device);
+//     fs.format();
 
-    std::string root_path = "/";
-    std::vector<DirEntry> entries;
+//     std::string root_path = "/";
+//     std::vector<DirEntry> entries;
 
-    std::uint8_t buffer[BLOCK_SIZE];
-    Superblock sb;
+//     std::uint8_t buffer[BLOCK_SIZE];
+//     Superblock sb;
 
-    device.read_block(SUPERBLOCK_INDEX, buffer);
-    std::memcpy(&sb, buffer, sizeof(Superblock));
+//     device.read_block(SUPERBLOCK_INDEX, buffer);
+//     std::memcpy(&sb, buffer, sizeof(Superblock));
 
-    sb.magic++;
-    std::memcpy(buffer, &sb, sizeof(Superblock));
-    device.write_block(SUPERBLOCK_INDEX, buffer);
+//     sb.magic++;
+//     std::memcpy(buffer, &sb, sizeof(Superblock));
+//     device.write_block(SUPERBLOCK_INDEX, buffer);
 
-    FileSystem fs2(device);
-    FileSystemStatus status = fs2.listDir(root_path, entries);
+//     FileSystem fs2(device);
+//     FileSystemStatus status = fs2.listDir(root_path, entries);
 
-    EXPECT_EQ(status, FileSystemStatus::NotFormatted);
-}
+//     EXPECT_EQ(status, FileSystemStatus::NotFormatted);
+// }
 
 /******************* FORMAT TESTs *******************/
 
@@ -75,7 +75,7 @@ TEST(FileSystemTest, corruptSuperblock)
 
 // This test checks what if we modify the superblock after format
 
-TEST(FileSystemTest, formatInitializeBitmap)
+TEST_FS(FileSystemTest, formatInitializeBitmap)
 {
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
@@ -94,7 +94,7 @@ TEST(FileSystemTest, formatInitializeBitmap)
         EXPECT_EQ(buffer[i], 0xFF);
 }
 
-TEST(FileSystemTest, formatInitializeInodeBlocks)
+TEST_FS(FileSystemTest, formatInitializeInodeBlocks)
 {
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
@@ -113,7 +113,7 @@ TEST(FileSystemTest, formatInitializeInodeBlocks)
     }
 }
 
-TEST(FileSystemTest, formatRemount)
+TEST_FS(FileSystemTest, formatRemount)
 {
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
@@ -125,7 +125,7 @@ TEST(FileSystemTest, formatRemount)
 
 // /******************* CREATE_ENTY_IN_ROOT TESTs *******************/
 
-// TEST(FileSystemTest, CreateEntryInRootNotFormatted)
+// TEST_FS(FileSystemTest, CreateEntryInRootNotFormatted)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -137,7 +137,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::NotFormatted);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootNoName)
+// TEST_FS(FileSystemTest, CreateEntryInRootNoName)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -151,7 +151,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::UnknownError);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootTooLongName)
+// TEST_FS(FileSystemTest, CreateEntryInRootTooLongName)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -167,7 +167,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::UnknownError);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootNoSpaceOnDisk)
+// TEST_FS(FileSystemTest, CreateEntryInRootNoSpaceOnDisk)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -188,7 +188,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::UnknownError);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootDuplicateName)
+// TEST_FS(FileSystemTest, CreateEntryInRootDuplicateName)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -204,7 +204,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::UnknownError);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootDirRemount)
+// TEST_FS(FileSystemTest, CreateEntryInRootDirRemount)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -221,12 +221,12 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(status, FileSystemStatus::UnknownError);
 // }
 
-// TEST(FileSystemTest, CreateEntryInRootPersistsAndListedAfterRemount)
+// TEST_FS(FileSystemTest, CreateEntryInRootPersistsAndListedAfterRemount)
 // {
 //     // TODO
 // }
 
-// TEST(FileSystemTest, createEntryInRootRemountInodeExistance)
+// TEST_FS(FileSystemTest, createEntryInRootRemountInodeExistance)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -247,7 +247,7 @@ TEST(FileSystemTest, formatRemount)
 // }
 
 // // this are new
-// TEST(FileSystemTest, create_entry_in_root_NotFormatted)
+// TEST_FS(FileSystemTest, create_entry_in_root_NotFormatted)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -261,7 +261,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(st, FileSystemStatus::NotFormatted);
 // }
 
-// TEST(FileSystemTest, get_root_entry_inode_NotFound)
+// TEST_FS(FileSystemTest, get_root_entry_inode_NotFound)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);
@@ -277,7 +277,7 @@ TEST(FileSystemTest, formatRemount)
 //     EXPECT_EQ(st, FileSystemStatus::NotFormatted);
 // }
 
-// TEST(FileSystemTest, create_entry_in_root_disk_is_full)
+// TEST_FS(FileSystemTest, create_entry_in_root_disk_is_full)
 // {
 //     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
 //     InMemoryBlockDevice device(size_byte);

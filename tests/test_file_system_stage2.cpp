@@ -82,7 +82,7 @@ TEST(FileSystemTest, listDir_remount)
     FileSystemStatus st = fs2.listDir("F", entries);
     EXPECT_EQ(st, FileSystemStatus::NotFound);
 
-    FileSystemStatus st = fs2.listDir("/", entries);
+    st = fs2.listDir("/", entries);
 
     EXPECT_TRUE(entries.empty());
     EXPECT_EQ(st, FileSystemStatus::OK);

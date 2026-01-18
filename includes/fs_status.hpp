@@ -6,5 +6,7 @@ enum class FileSystemStatus
     NotFormatted,
     NotFound,
     NotDirectory,
+    FullDisk,
+    OutBoundariesBlock,
     UnknownError
 };
