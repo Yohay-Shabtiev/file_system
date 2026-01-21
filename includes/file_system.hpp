@@ -17,10 +17,11 @@ struct Inode
 {
     int type;
     int size;
-    int direct_block;
+    int direct_blocks[12];
+    int link_count;
 };
 
-static_assert(sizeof(Inode) == 12, "Inode must be 8 bytes");
+static_assert(sizeof(Inode) == (3 + 12) * sizeof(int), "Inode must be 8 bytes");
 
 struct DirEntry
 {
@@ -57,6 +58,7 @@ public:
     FileSystemStatus get_root_entry_inode(const std::string &entry_name, Inode &inode);
 
     friend class DataManagerTest;
+    friend class InodeManagerTest;
 
 private:
     BlockDevice &device;
@@ -64,46 +66,34 @@ private:
     Superblock superblock;
     std::vector<DirEntry> root_dir_entries;
 
-    void load_root_dir_from_device();
-
-    void save_root_dir_to_device();
-
-    int allocate_inode(int type);
-
+    /**********     Inode    ************/
+    FileSystemStatus init_inode_bitmap_on_format();
+    FileSystemStatus allocate_inode(int &inode_id);
     FileSystemStatus write_inode(int inode_id, const Inode &inode);
-
     FileSystemStatus read_inode(int inode_id, Inode &inode);
-
-    void init_inode_bitmap_on_format();
+    FileSystemStatus free_inode(int inode_id, const Inode &inode);
 
     void init_inode_blocks_on_format();
-
-    void init_data_bitmap_on_format();
-
-    void init_data_blocks_on_format();
-
-    void init_root_dir_block();
-
-    /**************  helper functions ************/
-    // make sure the id is inbounds
     void validate_inode_id(int inode_id);
+    int inode_byte_location(int inode_id);
+    Inode create_inode(int type);
 
+    /**********     Data    ************/
+    FileSystemStatus init_data_bitmap_on_format();
+    void init_data_blocks_on_format();
     FileSystemStatus allocate_data_block(int &free_block_number);
-
     FileSystemStatus free_data_block(int block_number);
 
-    // this
-    int inode_byte_location(int inode_id);
-
+    /**************  helper functions ************/
     bool bit_is_on(int inode_id, const int byte_index);
+    int get_block_index(int inode_id);
 
     // bool validate_entry_name(const std::string &entry_name);
 
-    void set_entry_name(DirEntry &entry, const std::string &entry_name);
-
-    int get_block_index(int inode_id);
-
-    Inode create_inode(int type);
-
+    /**********     Entry    ************/
     FileSystemStatus create_root_dir_inode();
+    void set_entry_name(DirEntry &entry, const std::string &entry_name);
+    void load_root_dir_from_device();
+    void save_root_dir_to_device();
+    void init_root_dir_block();
 };

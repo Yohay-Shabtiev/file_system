@@ -66,7 +66,6 @@ void FileSystem::format()
     std::memcpy(buffer, &superblock, sizeof(Superblock));
     device.write_block(SUPERBLOCK_INDEX, buffer);
 
-    is_formatted = true;
     root_dir_entries.clear();
 
     init_inode_bitmap_on_format();
@@ -75,75 +74,16 @@ void FileSystem::format()
     init_data_bitmap_on_format();
     init_data_blocks_on_format();
 
-    init_root_dir_block();
+    // init_root_dir_block();
     // create_root_dir_inode();
     // save_root_dir_to_device();
+
+    is_formatted = true; // locate it in the end so device is locked until the initialization is over
 }
 
-/* this function initialize the inode bitmap block
-   once we allocate an inode we turn on the bit (swith to 1)
-   til then the bit will be off (0)
-   since there are only 128 inodes in the FS all the overflow bits
-   will be set to '1' since we are not suppose to allocate them anyway
-*/
-void FileSystem::init_root_dir_block()
-{
-    std::uint8_t buffer[BLOCK_SIZE];
-    std::memset(buffer, 0, BLOCK_SIZE);
+/****************************************     DATA MANAGER APIs    ****************************************/
 
-    DirEntry de;
-    init_dirEntry(de);
-
-    int total_dirEntries_per_block = BLOCK_SIZE / DIR_ENTRY_SIZE;
-    for (int i = 0; i < total_dirEntries_per_block; i++)
-    {
-        std::memcpy(buffer + i * DIR_ENTRY_SIZE, &de, DIR_ENTRY_SIZE);
-    }
-
-    device.write_block(ROOT_DIR_BLOCK_INDEX, buffer);
-}
-
-void init_dirEntry(DirEntry &dirEntry)
-{
-    dirEntry.inode_id = -1;
-    dirEntry.name[0] = '\0';
-    dirEntry.type = -1;
-}
-
-void FileSystem::init_inode_bitmap_on_format()
-{
-    std::uint8_t buffer[BLOCK_SIZE];
-    std::memset(buffer, 0xFF, BLOCK_SIZE);
-
-    int bytes_in_bitmap = TOTAL_INODE_NUMBER / BITS_IN_BYTE;
-
-    if (bytes_in_bitmap > 0)
-        std::memset(buffer, 0, bytes_in_bitmap);
-
-    int remaining_bits = TOTAL_INODE_NUMBER % BITS_IN_BYTE;
-    if (remaining_bits > 0)
-    {
-        std::uint8_t mask = 0xFF;
-        mask <<= remaining_bits;
-        buffer[bytes_in_bitmap] = mask;
-    }
-
-    device.write_block(INODE_BITMAP_INDEX, buffer);
-}
-
-void FileSystem::init_inode_blocks_on_format()
-{
-    std::uint8_t buffer[BLOCK_SIZE];
-    std::memset(buffer, 0, BLOCK_SIZE);
-
-    int start = INODE_TABLE_START_INDEX;
-    int end = INODE_TABLE_SIZE + INODE_TABLE_START_INDEX;
-
-    for (int i = start; i < end; i++)
-        device.write_block(i, buffer);
-}
-
-void FileSystem::init_data_bitmap_on_format()
+FileSystemStatus FileSystem::init_data_bitmap_on_format()
 {
     std::uint8_t buffer[BLOCK_SIZE];
     std::memset(buffer, 0xFF, BLOCK_SIZE);
@@ -162,6 +102,7 @@ void FileSystem::init_data_bitmap_on_format()
     }
 
     device.write_block(DATA_BITMAP_INDEX, buffer);
+    return FileSystemStatus::OK;
 }
 
 void FileSystem::init_data_blocks_on_format()
@@ -171,6 +112,228 @@ void FileSystem::init_data_blocks_on_format()
 
     for (int i = DATA_START_BLOCK; i < TOTAL_BLOCKS_NUMBER; i++)
         device.write_block(i, buffer);
+}
+
+/*
+This method allocate the first free data block in the data table and mark the block as used
+free_data_block_number - is the number relative to the data table not the whole device
+*/
+FileSystemStatus FileSystem::allocate_data_block(int &free_data_block_number)
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    device.read_block(DATA_BITMAP_INDEX, buffer);
+
+    int free_block_index = -1; // init to -1 to determine if the disk is full
+
+    std::uint8_t mask;
+    std::memset(&mask, 0xFF, 1);
+
+    int total_bytes_in_data_bitmap = (DATA_TABLE_SIZE * BITS_IN_BYTE + BITS_IN_BYTE - 1) / BITS_IN_BYTE;
+    for (int i = 0; i < total_bytes_in_data_bitmap; i++)
+        if (buffer[i] != mask)
+        {
+            free_block_index = i;
+            break;
+        }
+
+    if (free_block_index == -1) // the disk is indeed full
+        return FileSystemStatus::FullDisk;
+
+    free_data_block_number = free_block_index * BITS_IN_BYTE;
+
+    mask = 1;
+    while (mask & buffer[free_block_index])
+    {
+        mask <<= 1;
+        free_data_block_number++;
+    }
+
+    buffer[free_block_index] |= mask;
+    device.write_block(DATA_BITMAP_INDEX, buffer);
+
+    return FileSystemStatus::OK;
+}
+
+/*
+data_block_number is the block number in the data table itselt
+*/
+FileSystemStatus FileSystem::free_data_block(int data_block_number)
+{
+    if (data_block_number < 0 || data_block_number >= DATA_TABLE_SIZE)
+        return FileSystemStatus::OutOfBounds;
+
+    std::uint8_t buffer[BLOCK_SIZE];
+    device.read_block(DATA_BITMAP_INDEX, buffer);
+
+    int block_idx = data_block_number / BITS_IN_BYTE; // calc the byte
+    int bit_idx = data_block_number % BITS_IN_BYTE;   // calc the bit
+
+    std::uint8_t mask = 1;
+    mask <<= bit_idx;
+
+    if (!(buffer[block_idx] & mask)) // the block is already free
+        return FileSystemStatus::UnknownError;
+
+    mask = ~mask;
+    buffer[block_idx] &= mask; // set to 0 the bit
+
+    device.write_block(DATA_BITMAP_INDEX, buffer);
+
+    return FileSystemStatus::OK;
+}
+
+/****************************************     INODE MANAGER APIs    ****************************************/
+
+FileSystemStatus FileSystem::init_inode_bitmap_on_format()
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    std::memset(buffer, 0xFF, BLOCK_SIZE);
+
+    int bytes_in_bitmap = TOTAL_INODE_NUMBER / BITS_IN_BYTE;
+
+    if (bytes_in_bitmap > 0)
+        std::memset(buffer, 0, bytes_in_bitmap);
+
+    int remaining_bits = TOTAL_INODE_NUMBER % BITS_IN_BYTE;
+    if (remaining_bits > 0)
+    {
+        std::uint8_t mask = 0xFF;
+        mask <<= remaining_bits;
+        buffer[bytes_in_bitmap] = mask;
+    }
+
+    device.write_block(INODE_BITMAP_INDEX, buffer);
+    // init_root_dir_inode();
+    return FileSystemStatus::OK;
+}
+
+// This function returns the index of the next free Inode
+FileSystemStatus FileSystem::allocate_inode(int &inode_id)
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    device.read_block(INODE_BITMAP_INDEX, buffer);
+    int byte_index = 0;
+    int bit_index = 0;
+    int total_bytes = (TOTAL_INODE_NUMBER + BITS_IN_BYTE - 1) / BITS_IN_BYTE;
+
+    for (; byte_index < total_bytes; byte_index++)
+        if (buffer[byte_index] != 0xFF) // found the free bit
+            break;
+
+    if (byte_index == total_bytes)
+        return FileSystemStatus::FullInode;
+
+    std::uint8_t mask = 1;
+    while (mask & buffer[byte_index])
+    {
+        mask <<= 1;
+        bit_index++;
+    }
+
+    inode_id = byte_index * BITS_IN_BYTE + bit_index;
+    if (inode_id >= TOTAL_INODE_NUMBER)
+        return FileSystemStatus::FullInode;
+
+    buffer[byte_index] |= mask;
+    device.write_block(INODE_BITMAP_INDEX, buffer);
+
+    return FileSystemStatus::OK;
+}
+
+FileSystemStatus FileSystem::free_inode(int inode_id, const Inode &inode)
+{
+}
+
+FileSystemStatus FileSystem::write_inode(int inode_id, const Inode &inode)
+{
+    // // making sure the id is legal
+    // validate_inode_id(inode_id);
+
+    // int byte_index = inode_byte_location(inode_id);
+    // if (!bit_is_on(inode_id, byte_index))
+    //     return FileSystemStatus::NotFound;
+
+    // int block_index = get_block_index(inode_id);
+
+    // std::uint8_t buffer[BLOCK_SIZE];
+    // device.read_block(block_index, buffer);
+
+    // int offset = (inode_id % INODES_PER_BLOCK) * sizeof(Inode);
+    // std::memcpy(buffer + offset, &inode, sizeof(Inode));
+    // device.write_block(block_index, buffer);
+
+    // return FileSystemStatus::OK;
+}
+
+FileSystemStatus FileSystem::read_inode(int inode_id, Inode &out)
+{
+    //     if (!is_formatted)
+    //         return FileSystemStatus::NotFormatted;
+
+    //     validate_inode_id(inode_id);
+
+    //     // calculate the wanted bit
+    //     int byte_index = inode_byte_location(inode_id);
+
+    //     if (!bit_is_on(inode_id, byte_index)) // the inode_id is not in a use
+    //         return FileSystemStatus::NotFound;
+
+    //     // calculate the data_block_number where the inode lives in
+    //     int block_index = get_block_index(inode_id);
+
+    //     // reading the wanted block
+    //     std::uint8_t buffer[BLOCK_SIZE];
+    //     device.read_block(block_index, buffer);
+
+    //     int inode_size = sizeof(Inode);
+    //     int inode_index = inode_id % INODES_PER_BLOCK;
+    //     std::memcpy(&out, buffer + inode_size * inode_index, inode_size);
+
+    //     return FileSystemStatus::OK;
+}
+
+void FileSystem::init_inode_blocks_on_format()
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    std::memset(buffer, 0, BLOCK_SIZE);
+
+    int start = INODE_TABLE_START_INDEX;
+    int end = INODE_TABLE_SIZE + INODE_TABLE_START_INDEX;
+
+    for (int i = start; i < end; i++)
+        device.write_block(i, buffer);
+}
+
+/****************************************     RootDir APIs    ****************************************/
+
+// /* this function initialize the inode bitmap block
+//    once we allocate an inode we turn on the bit (swith to 1)
+//    til then the bit will be off (0)
+//    since there are only 128 inodes in the FS all the overflow bits
+//    will be set to '1' since we are not suppose to allocate them anyway
+// */
+// void FileSystem::init_root_dir_block()
+// {
+//     std::uint8_t buffer[BLOCK_SIZE];
+//     std::memset(buffer, 0, BLOCK_SIZE);
+
+//     DirEntry de;
+//     init_dirEntry(de);
+
+//     int total_dirEntries_per_block = BLOCK_SIZE / DIR_ENTRY_SIZE;
+//     for (int i = 0; i < total_dirEntries_per_block; i++)
+//     {
+//         std::memcpy(buffer + i * DIR_ENTRY_SIZE, &de, DIR_ENTRY_SIZE);
+//     }
+
+//     device.write_block(ROOT_DIR_BLOCK_INDEX, buffer);
+// }
+
+void init_dirEntry(DirEntry &dirEntry)
+{
+    dirEntry.inode_id = -1;
+    dirEntry.name[0] = '\0';
+    dirEntry.type = -1;
 }
 
 FileSystemStatus FileSystem::create_root_dir_inode()
@@ -314,110 +477,10 @@ void FileSystem::load_root_dir_from_device()
     }
 }
 
-// bool FileSystem::validate_entry_name(const std::string &entry_name)
-// {
-//     int total_root_entries = root_dir_entries.size();
-//     if (total_root_entries >= MAX_ROOT_ENTRIES)
-//         return false;
-
-//     int name_len = static_cast<int>(entry_name.length());
-//     if (name_len > ENTRY_NAME_LENGTH - 1)
-//         return false;
-
-//     if (name_len == 0)
-//         return false;
-
-//     for (const DirEntry &e : root_dir_entries)
-//         if (strlen(e.name) == entry_name.length() &&
-//             std::memcmp(e.name, entry_name.c_str(), entry_name.length()) == 0)
-//             return false;
-
-//     return true;
-// }
-
 void FileSystem::set_entry_name(DirEntry &entry, const std::string &entry_name)
 {
     std::memset(entry.name, 0, ENTRY_NAME_LENGTH);
     std::memcpy(entry.name, entry_name.c_str(), entry_name.length());
-}
-
-// This function returns the index of the next free Inode
-int FileSystem::allocate_inode(int type)
-{
-    // get bitmap table
-    std::uint8_t buffer[BLOCK_SIZE];
-    device.read_block(INODE_BITMAP_INDEX, buffer);
-
-    // scan for the next bit set to off
-    int total_bytes_required = (TOTAL_INODE_NUMBER + BITS_IN_BYTE - 1) / BITS_IN_BYTE;
-    for (int i = 0; i < total_bytes_required; i++)
-    {
-        std::uint8_t mask = 1;
-        std::uint8_t byte = static_cast<uint8_t>(buffer[i]);
-
-        for (int j = 0; j < BITS_IN_BYTE; j++)
-        {
-            if ((mask & byte) == 0)
-            {
-                int inode_id = i * BITS_IN_BYTE + j;
-                validate_inode_id(inode_id);
-                buffer[i] = static_cast<char>(mask | byte);
-                device.write_block(INODE_BITMAP_INDEX, buffer);
-                return inode_id;
-            }
-            mask <<= 1;
-        }
-    }
-
-    return -1; // no
-}
-
-FileSystemStatus FileSystem::write_inode(int inode_id, const Inode &inode)
-{
-    // making sure the id is legal
-    validate_inode_id(inode_id);
-
-    int byte_index = inode_byte_location(inode_id);
-    if (!bit_is_on(inode_id, byte_index))
-        return FileSystemStatus::NotFound;
-
-    int block_index = get_block_index(inode_id);
-
-    std::uint8_t buffer[BLOCK_SIZE];
-    device.read_block(block_index, buffer);
-
-    int offset = (inode_id % INODES_PER_BLOCK) * sizeof(Inode);
-    std::memcpy(buffer + offset, &inode, sizeof(Inode));
-    device.write_block(block_index, buffer);
-
-    return FileSystemStatus::OK;
-}
-
-FileSystemStatus FileSystem::read_inode(int inode_id, Inode &out)
-{
-    if (!is_formatted)
-        return FileSystemStatus::NotFormatted;
-
-    validate_inode_id(inode_id);
-
-    // calculate the wanted bit
-    int byte_index = inode_byte_location(inode_id);
-
-    if (!bit_is_on(inode_id, byte_index)) // the inode_id is not in a use
-        return FileSystemStatus::NotFound;
-
-    // calculate the data_block_number where the inode lives in
-    int block_index = get_block_index(inode_id);
-
-    // reading the wanted block
-    std::uint8_t buffer[BLOCK_SIZE];
-    device.read_block(block_index, buffer);
-
-    int inode_size = sizeof(Inode);
-    int inode_index = inode_id % INODES_PER_BLOCK;
-    std::memcpy(&out, buffer + inode_size * inode_index, inode_size);
-
-    return FileSystemStatus::OK;
 }
 
 int FileSystem::get_block_index(int inode_id)
@@ -459,70 +522,23 @@ bool FileSystem::bit_is_on(int inode_id, const int byte_index)
     return (byte & mask) != 0;
 }
 
-/*
-This method allocate the first free data block in the data table and mark the block as used
-free_data_block_number - is the number relative to the data table not the whole device
-*/
-FileSystemStatus FileSystem::allocate_data_block(int &free_data_block_number)
-{
-    std::uint8_t buffer[BLOCK_SIZE];
-    device.read_block(DATA_BITMAP_INDEX, buffer);
+// bool FileSystem::validate_entry_name(const std::string &entry_name)
+// {
+//     int total_root_entries = root_dir_entries.size();
+//     if (total_root_entries >= MAX_ROOT_ENTRIES)
+//         return false;
 
-    int free_block_index = -1; // init to -1 to determine if the disk is full
+//     int name_len = static_cast<int>(entry_name.length());
+//     if (name_len > ENTRY_NAME_LENGTH - 1)
+//         return false;
 
-    std::uint8_t mask;
-    std::memset(&mask, 0xFF, 1);
+//     if (name_len == 0)
+//         return false;
 
-    int total_bytes_in_data_bitmap = (DATA_TABLE_SIZE * BITS_IN_BYTE + BITS_IN_BYTE - 1) / BITS_IN_BYTE;
-    for (int i = 0; i < total_bytes_in_data_bitmap; i++)
-        if (buffer[i] != mask)
-        {
-            free_block_index = i;
-            break;
-        }
+//     for (const DirEntry &e : root_dir_entries)
+//         if (strlen(e.name) == entry_name.length() &&
+//             std::memcmp(e.name, entry_name.c_str(), entry_name.length()) == 0)
+//             return false;
 
-    if (free_block_index == -1) // the disk is indeed full
-        return FileSystemStatus::FullDisk;
-
-    free_data_block_number = free_block_index * BITS_IN_BYTE;
-
-    mask = 1;
-    while (mask & buffer[free_block_index])
-    {
-        mask <<= 1;
-        free_data_block_number++;
-    }
-
-    buffer[free_block_index] |= mask;
-    device.write_block(DATA_BITMAP_INDEX, buffer);
-
-    return FileSystemStatus::OK;
-}
-
-/*
-data_block_number is the block number in the data table itselt
-*/
-FileSystemStatus FileSystem::free_data_block(int data_block_number)
-{
-    if (data_block_number < 0 || data_block_number >= DATA_TABLE_SIZE)
-        return FileSystemStatus::OutBoundariesBlock;
-
-    std::uint8_t buffer[BLOCK_SIZE];
-    device.read_block(DATA_BITMAP_INDEX, buffer);
-
-    int block_idx = data_block_number / BITS_IN_BYTE; // calc the byte
-    int bit_idx = data_block_number % BITS_IN_BYTE;   // calc the bit
-
-    std::uint8_t mask = 1;
-    mask <<= bit_idx;
-
-    if (!(buffer[block_idx] & mask)) // the block is already free
-        return FileSystemStatus::UnknownError;
-
-    mask = ~mask;
-    buffer[block_idx] &= mask; // set to 0 the bit
-
-    device.write_block(DATA_BITMAP_INDEX, buffer);
-
-    return FileSystemStatus::OK;
-}
+//     return true;
+// }
