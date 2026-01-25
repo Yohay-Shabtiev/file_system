@@ -9,5 +9,8 @@ enum class FileSystemStatus
     FullDisk,
     FullInode,
     OutOfBounds,
-    UnknownError
+    UnknownError,
+    EntryNameTooLong,
+    EntryTypeError,
+    EntryNotFound
 };

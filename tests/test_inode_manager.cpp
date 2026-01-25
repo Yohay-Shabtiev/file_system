@@ -98,6 +98,7 @@ TEST_F(InodeManagerTest, full_inode_table)
     FileSystemStatus status = call_allocate_inode(fs, inode_id);
     EXPECT_EQ(status, FileSystemStatus::FullInode);
 };
+
 TEST_F(InodeManagerTest, write_inode){
 
 };

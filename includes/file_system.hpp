@@ -5,6 +5,13 @@
 #include <vector>
 #include <cassert>
 
+enum class EntryType
+{
+    Uninitialized = 1,
+    File,
+    Directory
+};
+
 struct Superblock
 {
     int magic;
@@ -15,19 +22,19 @@ struct Superblock
 
 struct Inode
 {
-    int type;
+    EntryType type;
     int size;
-    int direct_blocks[12];
+    int direct_blocks[INODE_DATA_SIZE];
     int link_count;
 };
 
-static_assert(sizeof(Inode) == (3 + 12) * sizeof(int), "Inode must be 8 bytes");
+static_assert(sizeof(Inode) == (3 + 12) * sizeof(int), "Inode must be 60 bytes");
 
 struct DirEntry
 {
     int inode_id;
-    int type;
-    char name[ENTRY_NAME_LENGTH];
+    EntryType type;
+    char name[ENTRY_NAME_LENGTH + 1];
 };
 
 static_assert(sizeof(DirEntry) == 64 + 8, "padding must be different");
@@ -72,11 +79,13 @@ private:
     FileSystemStatus write_inode(int inode_id, const Inode &inode);
     FileSystemStatus read_inode(int inode_id, Inode &inode);
     FileSystemStatus free_inode(int inode_id, const Inode &inode);
-
+    FileSystemStatus create_new_inode(EntryType type, int parent_inode_id, const std::string name);
+    FileSystemStatus validate_parent_and_name(int parent_inode_id, const std::string &name);
     void init_inode_blocks_on_format();
+
     void validate_inode_id(int inode_id);
     int inode_byte_location(int inode_id);
-    Inode create_inode(int type);
+    // FileSystemStatus create_new_inode(int type, Inode &inode);
 
     /**********     Data    ************/
     FileSystemStatus init_data_bitmap_on_format();
@@ -91,6 +100,16 @@ private:
     // bool validate_entry_name(const std::string &entry_name);
 
     /**********     Entry    ************/
+
+    FileSystemStatus add_entry(EntryType type, int parent_inode_id, const std::string name, int inode_id);
+
+    //
+    //
+    //
+    //
+    //
+    //
+    //
     FileSystemStatus create_root_dir_inode();
     void set_entry_name(DirEntry &entry, const std::string &entry_name);
     void load_root_dir_from_device();
