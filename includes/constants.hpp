@@ -6,8 +6,9 @@ const int BITS_IN_BYTE = 8;
 /* FS constants */
 const int BLOCK_SIZE = 4096;
 const int TOTAL_BLOCKS_NUMBER = 100;
-const int ENTRY_NAME_LENGTH = 64;
+const int ENTRY_NAME_LENGTH = 63;
 const int TOTAL_INODE_NUMBER = 128;
+const int INODE_DATA_SIZE = 12;
 
 /* Superblock constants */
 const int FS_MAGIC = 0x12345678;

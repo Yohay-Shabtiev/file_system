@@ -7,6 +7,10 @@ enum class FileSystemStatus
     NotFound,
     NotDirectory,
     FullDisk,
-    OutBoundariesBlock,
-    UnknownError
+    FullInode,
+    OutOfBounds,
+    UnknownError,
+    EntryNameTooLong,
+    EntryTypeError,
+    EntryNotFound
 };

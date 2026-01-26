@@ -16,6 +16,11 @@ public:
     virtual ~DataManagerTest() noexcept override = default;
 
 protected:
+    FileSystemStatus call_init_data_bitmap_on_format(FileSystem &fs)
+    {
+        return fs.init_data_bitmap_on_format();
+    }
+
     FileSystemStatus call_allocate_data_block(FileSystem &fs, int &num)
     {
         return fs.allocate_data_block(num);
@@ -26,6 +31,11 @@ protected:
         return fs.free_data_block(block_number);
     }
 };
+
+TEST_F(DataManagerTest, init_data_bitmap)
+{
+    // todo
+}
 
 TEST_F(DataManagerTest, allocate_data_block_FirstBlock)
 {
