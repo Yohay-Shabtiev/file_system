@@ -7,6 +7,7 @@ enum class FileSystemStatus
     NotFound,
     NotDirectory,
     FullDisk,
+    FullDirectory,
     FullInode,
     OutOfBounds,
     UnknownError,

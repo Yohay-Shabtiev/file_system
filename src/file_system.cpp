@@ -341,7 +341,7 @@ FileSystemStatus FileSystem::create_new_inode(EntryType type, int parent_inode_i
 
     new_inode.type = type;
     new_inode.size = 0;
-    for (int i = 0; i < INODE_DATA_SIZE; i++)
+    for (int i = 0; i < TOTAL_DIRECT_BLOCKS; i++)
         new_inode.direct_blocks[i] = -1;
 
     int inode_id;
@@ -353,8 +353,112 @@ FileSystemStatus FileSystem::create_new_inode(EntryType type, int parent_inode_i
     if (status != FileSystemStatus::OK)
         return status;
 
-    status = add_entry(type, parent_inode_id, name, inode_id);
+    status = add_entry(parent_inode_id, name, inode_id);
     return FileSystemStatus::OK;
+}
+
+/****************************************     Entry APIs    ****************************************/
+
+/* this function add a new entry to an existing entry(directory) */
+FileSystemStatus FileSystem::add_entry(int parent_inode_id, const std::string &new_entry_name, int new_inode_id)
+{
+    FileSystemStatus status = validate_parent_and_name(parent_inode_id, new_entry_name);
+    if (status != FileSystemStatus::OK)
+        return status;
+
+    Inode parent_inode;
+    status = read_inode(parent_inode_id, parent_inode);
+    if (parent_inode.type != EntryType::Directory)
+        return FileSystemStatus::NotDirectory;
+
+    DirEntry new_entry;
+    status = create_new_entry(new_entry, new_entry_name, new_inode_id);
+    if (status != FileSystemStatus::OK)
+        return status;
+
+    status = add_entry_to_parent(parent_inode_id, parent_inode, new_entry);
+    if (status != FileSystemStatus::OK)
+        return status;
+
+    return FileSystemStatus::OK;
+}
+
+FileSystemStatus FileSystem::add_entry_to_parent(int parent_inode_id, Inode &parent_inode, DirEntry &new_entry)
+{
+    FileSystemStatus status;
+    int dirEntry_index = -1, block_number = -1;
+    for (int i = 0; i < TOTAL_DIRECT_BLOCKS; i++)
+    {
+        if (parent_inode.direct_blocks[i] != -1)
+        {
+            dirEntry_index = find_dirEntry(parent_inode.direct_blocks[i], -1);
+            if (dirEntry_index != -1)
+            {
+                block_number = parent_inode.direct_blocks[i];
+                break;
+            }
+        }
+        else
+        {
+            status = allocate_data_block(block_number);
+            if (status != FileSystemStatus::OK)
+                return status;
+
+            init_data_block_to_dirEntries_block(block_number);
+            dirEntry_index = 0;
+
+            parent_inode.size += BLOCK_SIZE;
+            parent_inode.direct_blocks[i] = block_number;
+            write_inode(parent_inode_id, parent_inode);
+            break;
+        }
+    }
+
+    if (block_number == -1 and dirEntry_index == -1)
+        return FileSystemStatus::FullDirectory;
+
+    status = insert_dirEntry_to_block(block_number, dirEntry_index, new_entry);
+    if (status != FileSystemStatus::OK)
+        return status;
+
+    return FileSystemStatus::OK;
+    // int block_number = -1, index = -1;
+    // for (int i = 0; i < TOTAL_DIRECT_BLOCKS; i++)
+    // {
+    //     if (parent_inode.direct_blocks[i] != -1)
+    //     {
+    //         if ((index = block_is_full(parent_inode.direct_blocks[i])) != -1)
+    //         {
+    //             block_number = parent_inode.direct_blocks[i];
+    //             break;
+    //         }
+    //     }
+    //     else // we need to allocate new block
+    //     {
+    //         status = allocate_data_block(block_number);
+    //         if (status != FileSystemStatus::OK)
+    //             return status;
+    //         parent_inode.direct_blocks[i] = block_number;
+
+    //         status = write_inode(parent_inode_id, parent_inode);
+    //         if (status != FileSystemStatus::OK)
+    //             return status;
+
+    //         index = 0;
+    //         break;
+    //     }
+    // }
+    // if (block_number == -1 and index == -1)
+    //     return FileSystemStatus::FullDirectory;
+
+    // int dirEntry_size = sizeof(DirEntry);
+    // std::uint8_t buffer[BLOCK_SIZE];
+    // if (index == 0)
+    //     std::memset(buffer, 0xFF, BLOCK_SIZE);
+    // else
+    //     device.read_block(block_number, buffer);
+    // std::memcpy(buffer + index * dirEntry_size, &new_entry, dirEntry_size);
+    // device.write_block(block_number, buffer);
 }
 
 FileSystemStatus FileSystem::validate_parent_and_name(int parent_inode_id, const std::string &name)
@@ -373,27 +477,74 @@ FileSystemStatus FileSystem::validate_parent_and_name(int parent_inode_id, const
     return FileSystemStatus::OK;
 }
 
-/****************************************     Entry APIs    ****************************************/
-
-/* this function add a new entry to an existing entry(directory) */
-FileSystemStatus FileSystem::add_entry(EntryType type, int parent_inode_id, const std::string name, int new_inode_id)
+FileSystemStatus FileSystem::create_new_entry(DirEntry &new_entry, const std::string &new_entry_name, int new_inode_id)
 {
-    FileSystemStatus status = validate_parent_and_name(parent_inode_id, name);
+    Inode new_inode;
+    FileSystemStatus status = read_inode(new_inode_id, new_inode);
     if (status != FileSystemStatus::OK)
         return status;
 
-    DirEntry entry;
-    entry.inode_id = new_inode_id;
-    entry.type = type;
-    std::memcpy(entry.name, name.c_str(), name.length());
+    std::memset(new_entry.name, 0, ENTRY_NAME_LENGTH + 1);
+    std::memcpy(new_entry.name, new_entry_name.c_str(), new_entry_name.length());
 
-    Inode parent_inode;
-    status = read_inode(parent_inode_id, parent_inode);
+    new_entry.inode_id = new_inode_id;
+    new_entry.type = new_inode.type;
 
-    if (parent_inode.type != EntryType::Directory)
-        return FileSystemStatus::NotDirectory;
+    return FileSystemStatus::OK;
+}
 
-    
+FileSystemStatus FileSystem::insert_dirEntry_to_block(int block_number, int dirEntry_index, DirEntry &new_entry)
+{
+    if (block_number < 0 || block_number >= DATA_TABLE_SIZE)
+        return FileSystemStatus::OutOfBounds;
+
+    if (dirEntry_index < 0 || dirEntry_index >= DIR_ENTRIES_PER_BLOCK)
+        return FileSystemStatus::OutOfBounds;
+
+    int dirEntry_size = sizeof(DirEntry);
+    std::uint8_t buffer[BLOCK_SIZE];
+    block_number += DATA_START_BLOCK;
+
+    device.read_block(block_number, buffer);
+    std::memcpy(buffer + dirEntry_index * dirEntry_size, &new_entry, dirEntry_size);
+    device.write_block(block_number, buffer);
+
+    return FileSystemStatus::OK;
+}
+
+void FileSystem::init_data_block_to_dirEntries_block(int block_number)
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    std::memset(buffer, 0xFF, BLOCK_SIZE);
+
+    device.write_block(DATA_START_BLOCK + block_number, buffer);
+}
+
+int FileSystem::find_dirEntry(int block_number, int dirEntry_id) const
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    device.read_block(block_number + DATA_START_BLOCK, buffer);
+
+    DirEntry *entries = reinterpret_cast<DirEntry *>(buffer);
+    for (int i = 0; i < DIR_ENTRIES_PER_BLOCK; i++)
+        if (entries[i].inode_id == dirEntry_id)
+            return i;
+
+    return -1;
+}
+
+int FileSystem::block_is_full(int block_number)
+{
+    std::uint8_t buffer[BLOCK_SIZE];
+    device.read_block(block_number + DATA_START_BLOCK, buffer);
+    int dir_entry_size = sizeof(DirEntry);
+
+    DirEntry *entries = reinterpret_cast<DirEntry *>(buffer);
+    for (int i = 0; i < DIR_ENTRIES_PER_BLOCK; i++)
+        if (entries[i].inode_id == -1)
+            return i;
+
+    return -1;
 }
 
 /****************************************     RootDir APIs    ****************************************/
@@ -619,3 +770,5 @@ bool FileSystem::bit_is_on(int inode_id, const int byte_index)
 
 //     return true;
 // }
+
+/****************************************     Helper functions    ****************************************/

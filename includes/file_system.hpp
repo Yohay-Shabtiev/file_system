@@ -24,7 +24,7 @@ struct Inode
 {
     EntryType type;
     int size;
-    int direct_blocks[INODE_DATA_SIZE];
+    int direct_blocks[TOTAL_DIRECT_BLOCKS];
     int link_count;
 };
 
@@ -41,6 +41,7 @@ static_assert(sizeof(DirEntry) == 64 + 8, "padding must be different");
 
 const int INODE_SIZE = sizeof(Inode);
 const int DIR_ENTRY_SIZE = sizeof(DirEntry);
+const int DIR_ENTRIES_PER_BLOCK = BLOCK_SIZE / sizeof(DirEntry);
 
 const int INODES_PER_BLOCK = BLOCK_SIZE / INODE_SIZE;
 const int INODE_TABLE_SIZE = (TOTAL_INODE_NUMBER + INODES_PER_BLOCK - 1) / INODES_PER_BLOCK;
@@ -96,12 +97,20 @@ private:
     /**************  helper functions ************/
     bool bit_is_on(int inode_id, const int byte_index);
     int get_block_index(int inode_id);
-
+    FileSystemStatus calc_next_free_dirEntry_offset(int block_number, int &offset);
     // bool validate_entry_name(const std::string &entry_name);
 
     /**********     Entry    ************/
 
-    FileSystemStatus add_entry(EntryType type, int parent_inode_id, const std::string name, int inode_id);
+    FileSystemStatus create_new_entry(DirEntry &new_entry, const std::string &new_entry_name, int new_inode_id);
+    FileSystemStatus add_entry(int parent_inode_id, const std::string &name, int inode_id);
+    FileSystemStatus add_entry_to_parent(int parent_inode_id, Inode &parent_inode, DirEntry &new_entry);
+    int find_dirEntry(int block_number, int dirEntry_id) const;
+    int block_is_full(int block_number);
+    void init_data_block_to_dirEntries_block(int block_number);
+    FileSystemStatus insert_dirEntry_to_block(int block_number, int dirEntry_index, DirEntry &new_entry);
+
+    // FileSystemStatus create_new_entry(int parent_inode_id, const std::string &name, int new_inode_id, DirEntry &new_entry);
 
     //
     //
