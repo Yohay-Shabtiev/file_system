@@ -1,6 +1,7 @@
 #include "in_memory_block_device.hpp"
 #include <cassert>
 #include <cstring>
+#include "fs_status.hpp"
 
 /*
  * This constructor allocate an in-memory blocks for the FS
@@ -18,18 +19,20 @@ int InMemoryBlockDevice::get_total_blocks_number() const
     return memory.size();
 }
 
-void InMemoryBlockDevice::read_block(int block_index, std::uint8_t *buffer) const
+FileSystemStatus InMemoryBlockDevice::read_block(int block_index, std::uint8_t *buffer) const
 {
     assert(block_index >= 0);
     assert(block_index < get_total_blocks_number());
 
     std::memcpy(buffer, &memory[block_index], BLOCK_SIZE);
+    return FileSystemStatus::OK;
 }
 
-void InMemoryBlockDevice::write_block(int block_index, const std::uint8_t *buffer)
+FileSystemStatus InMemoryBlockDevice::write_block(int block_index, const std::uint8_t *buffer)
 {
     assert(block_index >= 0);
     assert(block_index < get_total_blocks_number());
 
     std::memcpy(&memory[block_index], buffer, BLOCK_SIZE);
+    return FileSystemStatus::OK;
 }

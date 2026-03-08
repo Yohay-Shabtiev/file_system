@@ -13,5 +13,6 @@ enum class FileSystemStatus
     UnknownError,
     EntryNameTooLong,
     EntryTypeError,
-    EntryNotFound
+    EntryNotFound,
+    InodeNotFound
 };

@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <cstdint>
+#include "fs_status.hpp"
 
 class InMemoryBlockDevice : public BlockDevice
 {
@@ -16,6 +17,6 @@ public:
     explicit InMemoryBlockDevice(int size_byte);
 
     int get_total_blocks_number() const override;
-    void read_block(int block_index, std::uint8_t *buffer) const override;
-    void write_block(int block_index, const std::uint8_t *buffer) override;
+    FileSystemStatus read_block(int block_index, std::uint8_t *buffer) const override;
+    FileSystemStatus write_block(int block_index, const std::uint8_t *buffer) override;
 };
