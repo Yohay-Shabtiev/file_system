@@ -9,6 +9,7 @@ const int TOTAL_BLOCKS_NUMBER = 100;
 const int ENTRY_NAME_LENGTH = 63;
 const int TOTAL_INODE_NUMBER = 128;
 const int TOTAL_DIRECT_BLOCKS = 12;
+const int ROOT_INODE_ID = 0;
 
 /* Superblock constants */
 const int FS_MAGIC = 0x12345678;

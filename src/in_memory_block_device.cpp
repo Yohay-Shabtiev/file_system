@@ -19,19 +19,19 @@ int InMemoryBlockDevice::get_total_blocks_number() const
     return memory.size();
 }
 
-FileSystemStatus InMemoryBlockDevice::read_block(int block_index, std::uint8_t *buffer) const
+FileSystemStatus InMemoryBlockDevice::read_block(int block_index, uint8_t *buffer) const
 {
-    assert(block_index >= 0);
-    assert(block_index < get_total_blocks_number());
+    if (block_index < 0 || block_index >= get_total_blocks_number())
+        return FileSystemStatus::OutOfBounds;
 
     std::memcpy(buffer, &memory[block_index], BLOCK_SIZE);
     return FileSystemStatus::OK;
 }
 
-FileSystemStatus InMemoryBlockDevice::write_block(int block_index, const std::uint8_t *buffer)
+FileSystemStatus InMemoryBlockDevice::write_block(int block_index, const uint8_t *buffer)
 {
-    assert(block_index >= 0);
-    assert(block_index < get_total_blocks_number());
+    if (block_index < 0 || block_index >= get_total_blocks_number())
+        return FileSystemStatus::OutOfBounds;
 
     std::memcpy(&memory[block_index], buffer, BLOCK_SIZE);
     return FileSystemStatus::OK;

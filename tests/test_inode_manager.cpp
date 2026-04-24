@@ -2,7 +2,7 @@
 #include "in_memory_block_device.hpp"
 #include "file_system.hpp"
 #include "fs_status.hpp"
-#include "constants.hpp"
+#include "fs_constants.hpp"
 
 class InodeManagerTest : public ::testing::Test
 {
@@ -38,7 +38,7 @@ TEST_F(InodeManagerTest, init_inode_bitmap)
     FileSystemStatus status = call_init_inode_bitmap_on_format(fs);
     EXPECT_EQ(status, FileSystemStatus::OK);
 
-    std::uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[BLOCK_SIZE];
     device.read_block(INODE_BITMAP_INDEX, buffer);
 
     int total_bytes = TOTAL_INODE_NUMBER / BITS_IN_BYTE;
@@ -51,9 +51,9 @@ TEST_F(InodeManagerTest, init_inode_bitmap)
         unused_first_byte = total_bytes;
     else
     {
-        std::uint8_t mask = 0xFF;
-        std::uint8_t unused_bits = mask << remain_bits;
-        std::uint8_t used_bits = ~unused_bits;
+        uint8_t mask = 0xFF;
+        uint8_t unused_bits = mask << remain_bits;
+        uint8_t used_bits = ~unused_bits;
 
         EXPECT_EQ(buffer[total_bytes] & unused_bits, unused_bits);
         EXPECT_EQ(buffer[total_bytes] & used_bits, 0);

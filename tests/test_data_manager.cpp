@@ -2,7 +2,7 @@
 #include "in_memory_block_device.hpp"
 #include "file_system.hpp"
 #include "fs_status.hpp"
-#include "constants.hpp"
+#include "fs_constants.hpp"
 
 /*
 we create a class for the private APIs so we can access them

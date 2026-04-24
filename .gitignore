@@ -1,2 +1,21 @@
+# Build output
 build/
-file_system/*.zip
+output
+output.txt
+
+# Archives
+includes.zip
+
+# Tests
+tests/
+
+# Proto files
+proto/
+rpc/includes/proto/
+
+# Compiled binaries
+client
+fs_test
+
+# VS Code
+.vscode/

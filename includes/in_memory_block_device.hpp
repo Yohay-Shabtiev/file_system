@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants.hpp"
+#include "fs_constants.hpp"
 #include "block_device.hpp"
 #include <vector>
 #include <array>
@@ -10,13 +10,13 @@
 class InMemoryBlockDevice : public BlockDevice
 {
 private:
-    std::vector<std::array<std::uint8_t, BLOCK_SIZE>> memory;
+    std::vector<std::array<uint8_t, BLOCK_SIZE>> memory;
 
 public:
     /* constructs a memory block */
     explicit InMemoryBlockDevice(int size_byte);
 
     int get_total_blocks_number() const override;
-    FileSystemStatus read_block(int block_index, std::uint8_t *buffer) const override;
-    FileSystemStatus write_block(int block_index, const std::uint8_t *buffer) override;
+    FileSystemStatus read_block(int block_index, uint8_t *buffer) const override;
+    FileSystemStatus write_block(int block_index, const uint8_t *buffer) override;
 };
