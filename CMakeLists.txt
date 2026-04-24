@@ -5,7 +5,7 @@ project(FilesystemProject CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ---- Core library with your filesystem code ----
+# ---- Core library ----
 add_library(filesystem_core
     src/in_memory_block_device.cpp
     src/file_system.cpp
@@ -16,31 +16,42 @@ target_include_directories(filesystem_core
         ${CMAKE_CURRENT_SOURCE_DIR}/includes
 )
 
-# ---- GoogleTest via FetchContent ----
-include(FetchContent)
-
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
+# ---- Main executable ----
+add_executable(FilesystemProject
+    main.cpp
 )
 
-# Download + add gtest / gtest_main targets
-FetchContent_MakeAvailable(googletest)
-
-# ---- Tests ----
-enable_testing()  # tells CMake that we will have tests
-
-add_executable(fs_tests
-    tests/test_file_system_stage1.cpp
-    tests/test_file_system_stage2.cpp
-    tests/test_file_system_data_manager.cpp
-    # tests/test_file_system.cpp
-)
-
-target_link_libraries(fs_tests
+target_link_libraries(FilesystemProject
     PRIVATE
-        filesystem_core   # your library with FS code
-        gtest_main        # GoogleTest main()
+        filesystem_core
 )
 
-add_test(NAME fs_tests COMMAND fs_tests)
+# ---- Tests (optional) ----
+option(BUILD_TESTS "Build tests" OFF)
+
+if(BUILD_TESTS)
+    include(FetchContent)
+
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
+    )
+
+    FetchContent_MakeAvailable(googletest)
+
+    enable_testing()
+
+    add_executable(fs_tests
+        tests/test_file_system_stage1.cpp
+        tests/test_file_system_stage2.cpp
+        tests/test_file_system_data_manager.cpp
+    )
+
+    target_link_libraries(fs_tests
+        PRIVATE
+            filesystem_core
+            gtest_main
+    )
+
+    add_test(NAME fs_tests COMMAND fs_tests)
+endif()

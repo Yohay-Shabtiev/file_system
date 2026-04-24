@@ -2,7 +2,7 @@
 #include "in_memory_block_device.hpp"
 #include "file_system.hpp"
 #include "fs_status.hpp"
-#include "constants.hpp"
+#include "fs_constants.hpp"
 
 #include <vector>
 #include <string>
@@ -18,7 +18,7 @@ TEST_FS(FileSystemTest, ctorDeviceIsNotFormatted)
     InMemoryBlockDevice device(size_byte);
     FileSystem fs(device);
     std::string root_path = "/";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus status;
     status = fs.listDir(root_path, entries);
@@ -37,7 +37,7 @@ TEST_FS(FileSystemTest, ctorDeviceRemount)
     FileSystem fs2(device);
 
     std::string root_path = "/";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
     FileSystemStatus status = fs2.listDir(root_path, entries);
 
     EXPECT_TRUE(entries.empty());
@@ -51,9 +51,9 @@ TEST_FS(FileSystemTest, ctorDeviceRemount)
 //     fs.format();
 
 //     std::string root_path = "/";
-//     std::vector<DirEntry> entries;
+//     std::vector<Entry> entries;
 
-//     std::uint8_t buffer[BLOCK_SIZE];
+//     uint8_t buffer[BLOCK_SIZE];
 //     Superblock sb;
 
 //     device.read_block(SUPERBLOCK_INDEX, buffer);
@@ -82,7 +82,7 @@ TEST_FS(FileSystemTest, formatInitializeBitmap)
     FileSystem fs(device);
     fs.format();
 
-    std::uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[BLOCK_SIZE];
     device.read_block(INODE_BITMAP_INDEX, buffer);
 
     int bytes_in_bitmap = (TOTAL_INODE_NUMBER + BITS_IN_BYTE - 1) / BITS_IN_BYTE;
@@ -101,7 +101,7 @@ TEST_FS(FileSystemTest, formatInitializeInodeBlocks)
     FileSystem fs(device);
     fs.format();
 
-    std::uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[BLOCK_SIZE];
     int start = INODE_TABLE_START_INDEX;
     int end = INODE_TABLE_SIZE + INODE_TABLE_START_INDEX;
 

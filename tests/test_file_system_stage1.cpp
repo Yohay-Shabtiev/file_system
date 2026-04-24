@@ -4,7 +4,7 @@ THIS FILE TESTS THE FFUNCTIONALITY OF InMemoryBlockDevice
 
 #include <gtest/gtest.h> // GoogleTest header
 #include "in_memory_block_device.hpp"
-#include "constants.hpp"
+#include "fs_constants.hpp"
 
 TEST(InMemoryBlockDevice, total_blocks)
 {
@@ -22,8 +22,8 @@ TEST(InMemoryBlockDevice, read_write_block)
     int total_blocks = device.get_total_blocks_number();
     assert(device.get_total_blocks_number() >= 2);
 
-    std::uint8_t buffer1[BLOCK_SIZE];
-    std::uint8_t buffer2[BLOCK_SIZE];
+    uint8_t buffer1[BLOCK_SIZE];
+    uint8_t buffer2[BLOCK_SIZE];
 
     for (int i = 0; i < BLOCK_SIZE; i++)
     {

@@ -2,7 +2,7 @@
 #include "in_memory_block_device.hpp"
 #include "file_system.hpp"
 #include "fs_status.hpp"
-#include "constants.hpp"
+#include "fs_constants.hpp"
 
 #include <vector>
 #include <string>
@@ -16,7 +16,7 @@ TEST(FileSystemTest, listDir_NotFormatted)
     InMemoryBlockDevice device(size_byte);
 
     FileSystem fs(device);
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus status = fs.listDir("/", entries);
     EXPECT_EQ(status, FileSystemStatus::NotFormatted);
@@ -30,7 +30,7 @@ TEST(FileSystemTest, listDir_NotFound)
     fs.format();
 
     std::string invalid_root_path = "/A";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus status = fs.listDir(invalid_root_path, entries);
     EXPECT_EQ(status, FileSystemStatus::NotFound);
@@ -43,7 +43,7 @@ TEST(FileSystemTest, listDir_NotFound_and_NotFormatted)
     FileSystem fs(device);
 
     std::string invalid_root_path = "/A";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus status = fs.listDir(invalid_root_path, entries);
 
@@ -59,7 +59,7 @@ TEST(FileSystemTest, listDir_OK)
     fs.format();
 
     std::string valid_path = "/";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus status = fs.listDir(valid_path, entries);
     EXPECT_TRUE(entries.empty());
@@ -77,7 +77,7 @@ TEST(FileSystemTest, listDir_remount)
     }
 
     FileSystem fs2(device);
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     FileSystemStatus st = fs2.listDir("F", entries);
     EXPECT_EQ(st, FileSystemStatus::NotFound);
@@ -100,7 +100,7 @@ TEST(FileSystemTest, formatWritesSuperblock)
     int total_blocks = device.get_total_blocks_number();
 
     Superblock superblock;
-    std::uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[BLOCK_SIZE];
     device.read_block(SUPERBLOCK_INDEX, buffer);
     std::memcpy(&superblock, buffer, sizeof(Superblock));
 
@@ -115,13 +115,13 @@ TEST(FileSystemTest, corruptSuperblock)
     int size_byte = BLOCK_SIZE * TOTAL_BLOCKS_NUMBER;
     InMemoryBlockDevice device(size_byte);
     std::string root_path = "/";
-    std::vector<DirEntry> entries;
+    std::vector<Entry> entries;
 
     {
         FileSystem fs(device);
         fs.format();
 
-        std::uint8_t buffer[BLOCK_SIZE];
+        uint8_t buffer[BLOCK_SIZE];
         Superblock sb;
 
         device.read_block(SUPERBLOCK_INDEX, buffer);
@@ -145,7 +145,7 @@ TEST(FileSystemTest, format_initialize_Bitmap)
     FileSystem fs(device);
     fs.format();
 
-    std::uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[BLOCK_SIZE];
     device.read_block(INODE_BITMAP_INDEX, buffer);
 
     int bytes_in_bitmap = (TOTAL_INODE_NUMBER + BITS_IN_BYTE - 1) / BITS_IN_BYTE;

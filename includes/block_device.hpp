@@ -8,6 +8,7 @@
 
 #pragma once
 #include <cstdint>
+#include "fs_status.hpp"
 
 class BlockDevice
 {
@@ -16,7 +17,7 @@ public:
 
     virtual int get_total_blocks_number() const = 0;
 
-    virtual void read_block(int block_index, std::uint8_t *buffer) const = 0;
+    virtual FileSystemStatus read_block(int block_index, uint8_t *buffer) const = 0;
 
-    virtual void write_block(int block_index, const std::uint8_t *buffer) = 0;
+    virtual FileSystemStatus write_block(int block_index, const uint8_t *buffer) = 0;
 };
