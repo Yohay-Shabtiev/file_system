@@ -2,6 +2,9 @@
 build/
 output
 output.txt
+fs_test
+project_jornal.md
+
 
 # Archives
 includes.zip
@@ -16,6 +19,8 @@ rpc/includes/proto/
 # Compiled binaries
 client
 fs_test
+server
+
 
 # VS Code
 .vscode/
