@@ -192,7 +192,7 @@ std::expected<size_t, FileSystemStatus> FileSystem::write_file(int inode_id, std
         int target_block = (offset + written_data_size) / BLOCK_SIZE;
         auto target_block_res = get_or_allocate_block_index(inode_id, inode, target_block); // getting the block to write to
         if (!target_block_res.has_value())
-            return std::unexpected(inode_res.error());
+            return std::unexpected(target_block_res.error());
 
         int block_index = target_block_res.value();
         int starting_byte = (offset + written_data_size) % BLOCK_SIZE;
@@ -243,10 +243,11 @@ this function creates a new file in path
 */
 std::expected<int, FileSystemStatus> FileSystem::create_file(int parent_inode_id, std::string_view file_name)
 {
-    // auto cwd_inode_id_res = get_inode_by_path(path);
-    // if (!cwd_inode_id_res)
-    //     return std::unexpected(cwd_inode_id_res.error());
-    // int cwd_inode_id = cwd_inode_id_res.value();
+    if (file_name.length() > ENTRY_NAME_LENGTH)
+    {
+        std::cout << "Error. The file name is too long." << std::endl;
+        return std::unexpected(FileSystemStatus::EntryNameTooLong);
+    }
 
     auto new_inode_id_res = create_new_inode(EntryType::File, parent_inode_id, file_name);
     if (!new_inode_id_res)

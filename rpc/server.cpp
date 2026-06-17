@@ -3,6 +3,7 @@
 #include <cstring>
 #include <thread>
 #include <mutex>
+#include <unistd.h>
 
 #include <sys/socket.h> // socket, bind, listen, accept
 #include <netinet/in.h> // sockaddr_in
@@ -42,8 +43,10 @@ int main()
     sockaddr_in server_address{};
     server_address.sin_family = AF_INET;         // IPv4
     server_address.sin_addr.s_addr = INADDR_ANY; // accept from any IP
-    server_address.sin_port = htons(PORT);       // port 8080
+    // server_address.sin_addr.s_addr = INADDR_LOOPBACK; // loopback from the same machine
+    server_address.sin_port = htons(PORT); // port 8080
 
+    // telling the kernel that the socket intend to use interface (server_address IP)
     if (bind(server_fd, (sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
         std::cerr << "bind() in server.main() failed" << std::endl;
@@ -51,7 +54,7 @@ int main()
     }
 
     // step 3 — listen
-    if (listen(server_fd, 5) < 0) // 5 = max pending connections
+    if (listen(server_fd, 5) < 0) // 5 = max pending connections (the backlog queue)
     {
         std::cerr << "listen() in server.main() failed" << std::endl;
         return 1;
@@ -67,7 +70,7 @@ int main()
     // step 4 — accept a client
     while (true)
     {
-
+        // sleep(2);
         sockaddr_in client_address{};
         socklen_t client_len = sizeof(client_address);
         int client_fd = accept(server_fd, (sockaddr *)&client_address, &client_len);
@@ -112,6 +115,8 @@ RpcStatus fs_status_to_rpc_status(FileSystemStatus status)
         return RpcStatus::FullDisk;
     case FileSystemStatus::NotEmpty:
         return RpcStatus::NotEmpty;
+    case FileSystemStatus::EntryNameTooLong:
+        return RpcStatus::EntryNameTooLong;
     default:
         return RpcStatus::UnknownError;
     }
@@ -121,6 +126,7 @@ RpcStatus handle_client(int client_fd, FileSystem &fs, std::mutex &fs_mutex)
 {
     while (true)
     {
+        // sleep(2);
         // reciving the header
         RpcHeader request_header;
 

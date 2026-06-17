@@ -42,6 +42,7 @@ enum class RpcOperation : uint32_t
 enum class RpcStatus : uint32_t
 {
     OK,
+    EntryNameTooLong,
     SyscallError,
     NotFound,
     NotEmpty,

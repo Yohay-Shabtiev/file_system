@@ -63,7 +63,9 @@ int main()
     LookupResponse file = lookup(client_fd, docs.inode_id, "file.txt");
     std::cout << "lookup file.txt: inode=" << file.inode_id << std::endl;
 
+    // sleep(30);
     close(client_fd);
+
     return 0;
 }
 
