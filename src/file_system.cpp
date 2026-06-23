@@ -90,15 +90,12 @@ void FileSystem::format()
 
 std::expected<Entry, FileSystemStatus> FileSystem::lookup(int directory_inode_id, const std::string_view entry_name)
 {
-    auto att_res = get_attributes(directory_inode_id);
-
-    InodeAttributes att = att_res.value();
-
-    std::cout << "Test: the inode type is: " << int(att.type) << std::endl;
-    std::cout << "Test: the size is: " << att.size << std::endl;
-
     if (directory_inode_id < 0 || directory_inode_id >= TOTAL_INODE_NUMBER)
         return std::unexpected(FileSystemStatus::OutOfBounds);
+
+    auto att_res = get_attributes(directory_inode_id);
+    if (!att_res.has_value())
+        return std::unexpected(att_res.error());
 
     // get the root inode
     auto directory_inode_res = get_inode(directory_inode_id);

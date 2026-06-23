@@ -70,7 +70,6 @@ int main()
     // step 4 — accept a client
     while (true)
     {
-        // sleep(2);
         sockaddr_in client_address{};
         socklen_t client_len = sizeof(client_address);
         int client_fd = accept(server_fd, (sockaddr *)&client_address, &client_len);

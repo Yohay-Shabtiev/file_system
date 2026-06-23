@@ -77,6 +77,7 @@ public:
     std::expected<Entry, FileSystemStatus> lookup(int dir_inode_id, std::string_view entry_name);
     FileSystemStatus delete_entry(int parent_inode_id, int inode_id);
     std::expected<InodeAttributes, FileSystemStatus> get_attributes(int inode_id);
+    std::expected<int, FileSystemStatus> get_inode_by_path(std::string_view path);
 
     // File operations
     std::expected<int, FileSystemStatus> create_file(int parent_inode_id, std::string_view file_name);
@@ -92,6 +93,7 @@ public:
 
     friend class DataManagerTest;
     friend class InodeManagerTest;
+    friend class FileSystemInternalTest;
 
 private:
     BlockDevice &device;
@@ -171,7 +173,6 @@ private:
     FileSystemStatus delete_file(int parent_inode_id, int inode_id);
     FileSystemStatus delete_directory(int parent_inode_id, int target_inode_id);
     /********** Path Resolution ************/
-    std::expected<int, FileSystemStatus> get_inode_by_path(std::string_view path);
 
     /********** Bitmap (Low-Level) ************/
     std::optional<int> find_free_bit(int start_block, int total_bits);

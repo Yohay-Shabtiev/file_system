@@ -9,8 +9,6 @@ project_jornal.md
 # Archives
 includes.zip
 
-# Tests
-tests/
 
 # Proto files
 proto/
@@ -20,6 +18,8 @@ rpc/includes/proto/
 client
 fs_test
 server
+
+includes/disk_block_device.hpp
 
 
 # VS Code
